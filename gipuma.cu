@@ -23,7 +23,7 @@
 
 
 //#define CENSUS
-#define SHARED
+//#define SHARED
 //#define NOTEXTURE_CHECK
 #define WIN_INCREMENT 2
 
