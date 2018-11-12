@@ -23,7 +23,7 @@
 
 
 //#define CENSUS
-//#define SHARED
+#define SHARED
 //#define NOTEXTURE_CHECK
 #define WIN_INCREMENT 2
 
@@ -1710,8 +1710,10 @@ __device__ FORCEINLINE void gipuma_checkerboard_planeRefinement_cu(GlobalState &
     return;
 }
 
+#define MAX_THREADS_PER_BLOCK          512
+
 template< typename T >
-__global__ void gipuma_black_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_black_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1725,7 +1727,7 @@ __global__ void gipuma_black_cu(GlobalState &gs, int iter)
 }
 
 template< typename T >
-__global__ void gipuma_black_spatialPropClose_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_black_spatialPropClose_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1739,7 +1741,7 @@ __global__ void gipuma_black_spatialPropClose_cu(GlobalState &gs, int iter)
 }
 
 template< typename T >
-__global__ void gipuma_black_spatialPropFar_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_black_spatialPropFar_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1753,7 +1755,7 @@ __global__ void gipuma_black_spatialPropFar_cu(GlobalState &gs, int iter)
 }
 
 template< typename T >
-__global__ void gipuma_black_planeRefine_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_black_planeRefine_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1767,7 +1769,7 @@ __global__ void gipuma_black_planeRefine_cu(GlobalState &gs, int iter)
 }
 
 template< typename T >
-__global__ void gipuma_red_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_red_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1781,7 +1783,7 @@ __global__ void gipuma_red_cu(GlobalState &gs, int iter)
 }
 
 template< typename T >
-__global__ void gipuma_red_spatialPropClose_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_red_spatialPropClose_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1795,7 +1797,7 @@ __global__ void gipuma_red_spatialPropClose_cu(GlobalState &gs, int iter)
 }
 
 template< typename T >
-__global__ void gipuma_red_spatialPropFar_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_red_spatialPropFar_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1809,7 +1811,7 @@ __global__ void gipuma_red_spatialPropFar_cu(GlobalState &gs, int iter)
 }
 
 template< typename T >
-__global__ void gipuma_red_planeRefine_cu(GlobalState &gs, int iter)
+__global__ void __launch_bounds__(MAX_THREADS_PER_BLOCK) gipuma_red_planeRefine_cu(GlobalState &gs, int iter)
 {
     int2 p = make_int2 ( blockIdx.x * blockDim.x + threadIdx.x, blockIdx.y * blockDim.y + threadIdx.y );
     if (threadIdx.x%2==0)
@@ -1874,21 +1876,25 @@ void gipuma(GlobalState &gs)
     block_size_initrand.x=16;
     block_size_initrand.y=16;
 
-    //printf("Launching kernel with grid of size %d %d and block of size %d %d and shared size %d %d\nBlock %d %d and radius %d %d and tile %d %d\n",
-           //grid_size.x,
-           //grid_size.y,
-           //block_size.x,
-           //block_size.y,
-           //SHARED_SIZE_W_host,
-           //SHARED_SIZE_H,
-           //BLOCK_W,
-           //BLOCK_H,
-           //WIN_RADIUS_W,
-           //WIN_RADIUS_H,
-           //TILE_W,
-           //TILE_H
-          //);
-    //printf("Grid size initrand is grid: %d-%d block: %d-%d\n", grid_size_initrand.x, grid_size_initrand.y, block_size_initrand.x, block_size_initrand.y);
+/*
+    printf("Launching kernel with grid of size %d %d and block of size %d %d and shared size %d %d %d %lu\nBlock %d %d and radius %d %d and tile %d %d\n",
+           grid_size.x,
+           grid_size.y,
+           block_size.x,
+           block_size.y,
+           SHARED_SIZE_W,
+           SHARED_SIZE_H,
+           shared_size_host,
+           shared_size_host * sizeof(T),
+           BLOCK_W,
+           BLOCK_H,
+           WIN_RADIUS_W,
+           WIN_RADIUS_H,
+           TILE_W,
+           TILE_H
+          );
+    printf("Grid size initrand is grid: %d-%d block: %d-%d\n", grid_size_initrand.x, grid_size_initrand.y, block_size_initrand.x, block_size_initrand.y);
+*/
 
     size_t avail;
     size_t total;
@@ -1904,6 +1910,9 @@ void gipuma(GlobalState &gs)
     //gipuma_init_cu<T><<< (rows + BLOCK_H-1)/BLOCK_H, BLOCK_H>>>(gs);
     //gipuma_init_random<<< grid_size_initrand, block_size_initrand>>>(gs);
     gipuma_init_cu2<T><<< grid_size_initrand, block_size_initrand>>>(gs);
+//    cudaDeviceSynchronize(); 
+//    getLastCudaError("gipuma_init_cu2<<<>>> execution failed\n");
+
     //gipuma_initial_cost<T><<< grid_size_initrand, block_size_initrand>>>(gs);
     cudaEventRecord(start);
     //for (int it =0;it<gs.params.iterations; it++) {
@@ -1913,36 +1922,47 @@ void gipuma(GlobalState &gs)
 #ifdef SMALLKERNEL
         //spatial propagation of 4 closest neighbors (1px up/down/left/right)
         gipuma_black_spatialPropClose_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
-        cudaDeviceSynchronize();
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_black_spatialPropClose_cu<<<>>> execution failed\n");
     #ifdef EXTRAPOINTFAR
         //spatial propagation of 4 far away neighbors (5px up/down/left/right)
         gipuma_black_spatialPropFar_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
-        cudaDeviceSynchronize();
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_black_spatialPropFar_cu<<<>>> execution failed\n");
     #endif
         //plane refinement
         gipuma_black_planeRefine_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
-        cudaDeviceSynchronize();
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_black_planeRefine_cu<<<>>> execution failed\n");
 
         //spatial propagation of 4 closest neighbors (1px up/down/left/right)
         gipuma_red_spatialPropClose_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
-        cudaDeviceSynchronize();
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_red_spatialPropClose_cu<<<>>> execution failed\n");
     #ifdef EXTRAPOINTFAR
         //spatial propagation of 4 far away neighbors (5px up/down/left/right)
         gipuma_red_spatialPropFar_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
-        cudaDeviceSynchronize();
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_red_spatialPropFar_cu<<<>>> execution failed\n");
     #endif
         //plane refinement
         gipuma_red_planeRefine_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
-        cudaDeviceSynchronize();
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_red_planeRefine_cu<<<>>> execution failed\n");
 #else
         gipuma_black_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_black_cu<<<>>> execution failed\n");
         gipuma_red_cu<T><<< grid_size, block_size, shared_size_host * sizeof(T)>>>(gs, it);
+//        cudaDeviceSynchronize();
+//        getLastCudaError("gipuma_red_cu<<<>>> execution failed\n");
 #endif
     }
     printf("\n");
     //printf("Computing final disparity\n");
     gipuma_compute_disp<<< grid_size_initrand, block_size_initrand>>>(gs);
     cudaDeviceSynchronize();
+//    getLastCudaError("gipuma_compute_disp<<<>>> execution failed\n");
     cudaEventRecord(stop);
 
     cudaEventSynchronize(stop);
